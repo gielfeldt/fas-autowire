@@ -1,0 +1,8 @@
+/vendor/
+
+/coverage/*
+!/coverage/.gitkeep
+
+/.vscode/
+
+composer.lock
