@@ -16,11 +16,6 @@ class DefaultValueException extends Exception implements ContainerExceptionInter
         parent::__construct("[$id] Argument: $argument has no default value while resolving");
     }
 
-    public static function fromReflection(?string $id, ReflectionParameter $p, ?Throwable $previous = null)
-    {
-        return new self($id, self::argument($p), $previous);
-    }
-
     public static function argument(ReflectionParameter $p)
     {
         $r = $p->getDeclaringFunction();

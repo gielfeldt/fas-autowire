@@ -92,9 +92,9 @@ class Autowire
                 $arg = $p->getDefaultValue();
                 $args[] = &$arg;
             } elseif ($p->isOptional()) {
-                $errors = DefaultValueException::fromReflection($id, $p, $errors);
+                $errors = new DefaultValueException($id, DefaultValueException::argument($p), $errors);
             } else {
-                throw DefaultValueException::fromReflection($id, $p, $errors);
+                throw new DefaultValueException($id, DefaultValueException::argument($p), $errors);
             }
         }
         return $args;
