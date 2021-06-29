@@ -20,6 +20,7 @@ class AutowireTest extends TestCase
 
     public function setup(): void
     {
+        error_reporting(E_ALL);
         $container = new Container();
         $this->autowire = new Autowire($container);
         $container->set('test', TestImplementation::class);

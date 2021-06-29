@@ -29,7 +29,7 @@ class Container implements ContainerInterface
     public function get(string $id)
     {
         $definition = $this->definitions[$id] ?? $id;
-        if ($this->resolved[$id]) {
+        if (isset($this->resolved[$id])) {
             return $this->resolved[$id];
         }
         if (is_string($definition)) {
