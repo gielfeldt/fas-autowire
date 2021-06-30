@@ -24,9 +24,12 @@ class AutowireTest extends TestCase
         $container = new Container();
         $this->autowire = new Autowire($container);
         $container->set('test', TestImplementation::class);
-        $container->set('test_factory', function (ContainerInterface $container) {
-            return $container->get(TestImplementation::class);
-        });
+        $container->set(
+            'test_factory',
+            function (ContainerInterface $container) {
+                return $container->get(TestImplementation::class);
+            }
+        );
     }
 
     protected function call($callback, array $args = [])
@@ -41,18 +44,23 @@ class AutowireTest extends TestCase
 
     public function testCanCallClosureWithDefaultParameters()
     {
-        $result = $this->call(static function ($name = 'abc') {
-            return strtoupper($name);
-        });
+        $result = $this->call(
+            static function ($name = 'abc') {
+                return strtoupper($name);
+            }
+        );
 
         $this->assertEquals("ABC", $result);
     }
 
     public function testCanCallClosureWithNamedParameter()
     {
-        $result = $this->call(static function ($name = 'abc') {
-            return strtoupper($name);
-        }, ['name' => 'cba']);
+        $result = $this->call(
+            static function ($name = 'abc') {
+                return strtoupper($name);
+            },
+            ['name' => 'cba']
+        );
 
         $this->assertEquals("CBA", $result);
     }
@@ -61,9 +69,11 @@ class AutowireTest extends TestCase
     {
         $this->expectException(DefaultValueException::class);
 
-        $this->call(static function ($name) {
-            return strtoupper($name);
-        });
+        $this->call(
+            static function ($name) {
+                return strtoupper($name);
+            }
+        );
     }
 
     public function testCanCallClassWithDefaultParameters()
@@ -124,11 +134,14 @@ class AutowireTest extends TestCase
 
     public function testCanCallWithVariadicParameters()
     {
-        $result = $this->call(static function (TestImplementation $test, ...$args) {
-            return $test->implementation(join(',', $args));
-        }, [
+        $result = $this->call(
+            static function (TestImplementation $test, ...$args) {
+                return $test->implementation(join(',', $args));
+            },
+            [
             'args' => ['c', 'b', 'a']
-        ]);
+            ]
+        );
 
         $this->assertEquals("C,B,A", $result);
     }
@@ -136,13 +149,16 @@ class AutowireTest extends TestCase
     public function testCanCallUsingByReferenceParameters()
     {
         $args = ['c', 'b', 'a'];
-        $result = $this->call(static function (TestImplementation $test, array &$args) {
-            $r = $test->implementation(join(',', $args));
-            $args = [1, 2, 3];
-            return $r;
-        }, [
+        $result = $this->call(
+            static function (TestImplementation $test, array &$args) {
+                $r = $test->implementation(join(',', $args));
+                $args = [1, 2, 3];
+                return $r;
+            },
+            [
             'args' => &$args,
-        ]);
+            ]
+        );
 
         $this->assertEquals("C,B,A", $result);
         $this->assertEquals([1, 2, 3], $args);
@@ -151,13 +167,16 @@ class AutowireTest extends TestCase
     public function testCanCallUsingByReferenceParametersWithDefaultValue()
     {
         $args = ['c', 'b', 'a'];
-        $result = $this->call(static function (TestImplementation $test, array &$args = ['c', 'b', 'a']) {
-            $r = $test->implementation(join(',', $args));
-            $args = [1, 2, 3];
-            return $r;
-        }, [
+        $result = $this->call(
+            static function (TestImplementation $test, array &$args = ['c', 'b', 'a']) {
+                $r = $test->implementation(join(',', $args));
+                $args = [1, 2, 3];
+                return $r;
+            },
+            [
             'args' => &$args,
-        ]);
+            ]
+        );
 
         $this->assertEquals("C,B,A", $result);
         $this->assertEquals([1, 2, 3], $args);
@@ -165,10 +184,12 @@ class AutowireTest extends TestCase
 
     public function testCanCallWithParametersByReferenceUsingDefaultValue()
     {
-        $result = $this->call(static function (TestImplementation $test, array &$args = ['c', 'b', 'a']) {
-            $r = $test->implementation(join(',', $args));
-            return $r;
-        });
+        $result = $this->call(
+            static function (TestImplementation $test, array &$args = ['c', 'b', 'a']) {
+                $r = $test->implementation(join(',', $args));
+                return $r;
+            }
+        );
 
         $this->assertEquals("C,B,A", $result);
     }
@@ -176,24 +197,29 @@ class AutowireTest extends TestCase
     public function testWillFailWithParametersByReferenceAndNoValues()
     {
         $this->expectException(DefaultValueException::class);
-        $this->call(static function (TestImplementation $test, array &$args) {
-            $r = $test->implementation(join(',', $args));
-            return $r;
-        });
+        $this->call(
+            static function (TestImplementation $test, array &$args) {
+                $r = $test->implementation(join(',', $args));
+                return $r;
+            }
+        );
     }
 
     public function testCanCallWithVariadicParametersByReference()
     {
         $args = ['c', 'b', 'a'];
-        $result = $this->call(static function (TestImplementation $test, &...$args) {
-            $r = $test->implementation(join(',', $args));
-            foreach ($args as $i => &$arg) {
-                $arg = $i + 1;
-            }
-            return $r;
-        }, [
+        $result = $this->call(
+            static function (TestImplementation $test, &...$args) {
+                $r = $test->implementation(join(',', $args));
+                foreach ($args as $i => &$arg) {
+                    $arg = $i + 1;
+                }
+                return $r;
+            },
+            [
             'args' => &$args
-        ]);
+            ]
+        );
 
         $this->assertEquals("C,B,A", $result);
         $this->assertEquals([1, 2, 3], $args);
@@ -202,11 +228,14 @@ class AutowireTest extends TestCase
     public function testCanUseStaticVariablesInClosure()
     {
         $outside = 'static';
-        $result = $this->call(static function ($inside) use ($outside) {
-            return strtoupper($outside . $inside);
-        }, [
+        $result = $this->call(
+            static function ($inside) use ($outside) {
+                return strtoupper($outside . $inside);
+            },
+            [
             'inside' => 'dynamic'
-        ]);
+            ]
+        );
 
         $this->assertEquals("STATICDYNAMIC", $result);
     }
@@ -214,9 +243,12 @@ class AutowireTest extends TestCase
     public function testWillFailOnNonInvokableClass()
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->call(NonInvokableClass::class, [
+        $this->call(
+            NonInvokableClass::class,
+            [
             'args' => ['c', 'b', 'a']
-        ]);
+            ]
+        );
     }
 
     public function testWillFailOnCallingInvalidCallable()
@@ -250,12 +282,25 @@ class AutowireTest extends TestCase
 
     public function testMissingOptionalWithoutDefaultValueWillNotFailIfLast()
     {
-        $datetime = $this->new(DateTime::class, ['time' => '2006-01-02T15:04:05+07:00']);
+        $datetime = $this->new(
+            DateTime::class,
+            [
+            'time' => '2006-01-02T15:04:05+07:00', // php < 8
+            'datetime' => '2006-01-02T15:04:05+07:00' // php >= 8
+            ]
+        );
         $this->assertEquals('2006-01-02T15:04:05+07:00', $datetime->format('c'));
     }
 
+    /**
+     * @requires PHP 7.4
+     */
     public function testMissingOptionalWithoutDefaultValueWillFail()
     {
+        if (version_compare(PHP_VERSION, '8.0', '>=')) {
+            $this->assertTrue(true);
+            return;
+        }
         $this->expectException(DefaultValueException::class);
         $this->new(DateTime::class, ['timezone' => new DateTimeZone('UTC')]);
     }
@@ -271,23 +316,29 @@ class AutowireTest extends TestCase
 
     public function testWillUseDefaultValueForOptionalParameter()
     {
-        $result = $this->call(function (?TestInterface $test1 = null, TestInterface $test2) {
-            return $test1 ? $test1->implementation('works') : $test2->implementation('works');
-        }, [
+        $result = $this->call(
+            function (?TestInterface $test1 = null, TestInterface $test2) {
+                return $test1 ? $test1->implementation('works') : $test2->implementation('works');
+            },
+            [
             'test2' => new TestImplementation2(new TestImplementation()),
-        ]);
+            ]
+        );
 
         $this->assertEquals('xxx:WORKS:xxx', $result);
     }
 
     public function testWillUseOverrideValueForOptionalParameter()
     {
-        $result = $this->call(function (?TestInterface $test1 = null, TestInterface $test2) {
-            return $test1 ? $test1->implementation('works') : $test2->implementation('works');
-        }, [
+        $result = $this->call(
+            function (?TestInterface $test1 = null, TestInterface $test2) {
+                return $test1 ? $test1->implementation('works') : $test2->implementation('works');
+            },
+            [
             'test1' => new TestImplementation(),
             'test2' => new TestImplementation2(new TestImplementation()),
-        ]);
+            ]
+        );
 
         $this->assertEquals('WORKS', $result);
     }
@@ -299,11 +350,14 @@ class AutowireTest extends TestCase
          */
         $container = $this->autowire->getContainer();
         $container->set(TestInterface::class, TestImplementation::class);
-        $result = $this->call(function (?TestInterface $test1 = null, TestInterface $test2) {
-            return $test1 ? $test1->implementation('works') : $test2->implementation('works');
-        }, [
+        $result = $this->call(
+            function (?TestInterface $test1 = null, TestInterface $test2) {
+                return $test1 ? $test1->implementation('works') : $test2->implementation('works');
+            },
+            [
             'test2' => new TestImplementation2(new TestImplementation()),
-        ]);
+            ]
+        );
 
         $this->assertEquals('WORKS', $result);
     }
@@ -315,12 +369,15 @@ class AutowireTest extends TestCase
          */
         $container = $this->autowire->getContainer();
         $container->set(TestInterface::class, TestImplementation2::class);
-        $result = $this->call(function (?TestInterface $test1 = null, TestInterface $test2) {
-            return $test1 ? $test1->implementation('works') : $test2->implementation('works');
-        }, [
+        $result = $this->call(
+            function (?TestInterface $test1 = null, TestInterface $test2) {
+                return $test1 ? $test1->implementation('works') : $test2->implementation('works');
+            },
+            [
             'test1' => new TestImplementation(),
             'test2' => new TestImplementation2(new TestImplementation()),
-        ]);
+            ]
+        );
 
         $this->assertEquals('WORKS', $result);
     }

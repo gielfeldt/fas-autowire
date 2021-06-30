@@ -6,6 +6,8 @@ namespace Fas\Autowire\Exception;
 
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
+use ReflectionUnionType;
+use ReflectionNamedType;
 use ReflectionParameter;
 use Throwable;
 
@@ -25,9 +27,21 @@ class DefaultValueException extends Exception implements ContainerExceptionInter
         $functionName = $className ? "$className::$functionName" : $functionName;
 
         $name = $p->getName();
-        $type = $p->hasType() ? $p->getType()->getName() : null;
+        $type = self::getTypeString($p);
         return "$functionName($type \$$name)";
     }
+    private static function getTypeString(ReflectionParameter $p)
+    {
+        $types = $p->hasType() ? $p->getType() : [];
+        $types = $types && $types instanceof ReflectionUnionType ? $types->getTypes() : [$types];
+        $types = array_filter($types, function ($type) {
+            return $type instanceof ReflectionNamedType;
+        });
+        $types = array_map(function ($type) {
+            return $type->getName();
+        }, $types);
+        return implode('|', $types);
+}
 
     public static function throw($id, $argument)
     {

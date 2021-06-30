@@ -65,8 +65,10 @@ class AutowireCompiledTest extends AutowireTest
 
     public function testMissingOptionalWithoutDefaultValueWillNotFailIfLast()
     {
-        // Compiled new does not support this
-        $this->expectException(DefaultValueException::class);
+        // Compiled new does not support this in php < 8
+        if (version_compare(PHP_VERSION, '8.0', '<')) {
+            $this->expectException(DefaultValueException::class);
+        }
         parent::testMissingOptionalWithoutDefaultValueWillNotFailIfLast();
     }
 

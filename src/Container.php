@@ -6,7 +6,6 @@ namespace Fas\Autowire;
 
 use Fas\Autowire\Exception\InvalidDefinitionException;
 use Psr\Container\ContainerInterface;
-use ReflectionClass;
 
 class Container implements ContainerInterface
 {
@@ -23,7 +22,7 @@ class Container implements ContainerInterface
 
     public function has(string $id): bool
     {
-        return isset($this->definitions[$id]) || (class_exists($id) && (new ReflectionClass($id))->isInstantiable());
+        return isset($this->definitions[$id]) || $this->autowire->canAutowire($id);
     }
 
     public function get(string $id)

@@ -1,4 +1,4 @@
-FROM php:7.4-cli AS base
+FROM php:8.0-cli AS base
 
 RUN apt update && \
     apt install -y \

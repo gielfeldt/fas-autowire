@@ -15,6 +15,10 @@ use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionParameter;
+use ReflectionUnionType;
+use Throwable;
 
 class Autowire
 {
@@ -44,6 +48,27 @@ class Autowire
         return $this->container;
     }
 
+    public function canAutowire($className, array $args = [])
+    {
+        if (!class_exists($className) || !(new ReflectionClass($className))->isInstantiable()) {
+            return false;
+        }
+        try {
+            $this->markNewing($className);
+            $c = new ReflectionClass($className);
+            if ($r = $c->getConstructor()) {
+                $this->createArguments($r, $args, $className);
+            }
+            return true;
+        } catch (CircularDependencyException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            return false;
+        } finally {
+            $this->unmarkNewing($className);
+        }
+    }
+
     public function createArguments(ReflectionFunctionAbstract $r, array $namedargs = [], $id = null)
     {
         $args = [];
@@ -51,7 +76,7 @@ class Autowire
         $errors = null;
         foreach ($ps as $p) {
             $name = $p->getName();
-            $type = $p->hasType() ? $p->getType()->getName() : null;
+
             // Named parameters first
             if (array_key_exists($name, $namedargs)) {
                 if ($errors) {
@@ -75,15 +100,28 @@ class Autowire
                 }
                 continue;
             }
-            if (isset($type) && $this->container->has($type)) {
-                if ($errors) {
-                    throw $errors;
-                }
 
-                $this->trackReference($type);
-                $args[] = $this->container->get($type);
-                continue;
+            $types = $p->hasType() ? $p->getType() : [];
+            $types = $types && $types instanceof ReflectionUnionType ? $types->getTypes() : [$types];
+            $types = array_filter($types, function ($type) {
+                return $type instanceof ReflectionNamedType;
+            });
+            $types = array_map(function ($type) {
+                return $type->getName();
+            }, $types);
+
+            foreach ($types as $type) {
+                if (isset($type) && $this->container->has($type)) {
+                    if ($errors) {
+                        throw $errors;
+                    }
+
+                    $this->trackReference($type);
+                    $args[] = $this->container->get($type);
+                    continue 2;
+                }
             }
+
             if ($p->isDefaultValueAvailable()) {
                 if ($errors) {
                     throw $errors;
@@ -100,13 +138,33 @@ class Autowire
         return $args;
     }
 
+    private function getTypeName(ReflectionParameter $p)
+    {
+        if (!$p->hasType()) {
+            return null;
+        }
+        $type = $p->getType();
+        if ($type instanceof ReflectionUnionType) {
+            foreach ($type->getTypes() as $type) {
+                var_dump($type);
+                if ($type instanceof ReflectionNamedType) {
+                    var_dump("name: " . $type->getName());
+                }
+
+            }
+        }
+        if ($type instanceof ReflectionNamedType) {
+            return $type->getName();
+        }
+        return null;
+    }
+
     public function compileArguments(ReflectionFunctionAbstract $r, array $defaultArguments = [], bool $callArguments = true)
     {
         $args = [];
         $ps = $r->getParameters();
         foreach ($ps as $p) {
             $name = $p->getName();
-            $type = $p->hasType() ? $p->getType()->getName() : null;
 
             $inputValue = $inputValueOr = "";
             if ($callArguments) {
@@ -114,35 +172,53 @@ class Autowire
                 $inputValueOr = "$inputValue ?? ";
             }
 
-            $noDefaultValue = false;
+            $hasDefaultValue = null;
             if (isset($defaultArguments[$name])) {
                 $defaultValue = var_export($defaultArguments[$name], true);
-            } elseif (isset($type) && $this->container->has($type)) {
-                $this->trackReference($type);
-                $defaultValue = '$container->get(' . var_export($type, true) . ')';
-            } elseif (isset($type) && interface_exists($type)) {
-                $defaultValue = '$container->get(' . var_export($type, true) . ')';
-                if ($p->isDefaultValueAvailable()) {
-                    $defaultValue = '($container->has(' . var_export($type, true) . ') ? ' . $defaultValue . ' : ' . var_export($p->getDefaultValue(), true) . ')';
-                }
-            } elseif ($p->isDefaultValueAvailable()) {
-                $defaultValue = var_export($p->getDefaultValue(), true);
+                $hasDefaultValue = true;
             } else {
-                $source = DefaultValueException::argument($p);
-                $noDefaultValue = true;
+                $types = $p->hasType() ? $p->getType() : [];
+                $types = $types && $types instanceof ReflectionUnionType ? $types->getTypes() : [$types];
+                $types = array_filter($types, function ($type) {
+                    return $type instanceof ReflectionNamedType;
+                });
+                $types = array_map(function ($type) {
+                    return $type->getName();
+                }, $types);
+
+                foreach ($types as $type) {
+                    if ($this->container->has($type) || interface_exists($type)) {
+                        $this->trackReference($type);
+                        $defaultValue = '$container->get(' . var_export($type, true) . ')';
+                        if ($p->isDefaultValueAvailable()) {
+                            $defaultValue = '($container->has(' . var_export($type, true) . ') ? ' . $defaultValue . ' : ' . var_export($p->getDefaultValue(), true) . ')';
+                        }
+                        $hasDefaultValue = true;
+                    break;
+                    }
+                }
+            }
+
+            if (!$hasDefaultValue) {
+                if ($p->isDefaultValueAvailable()) {
+                    $defaultValue = var_export($p->getDefaultValue(), true);
+                    $hasDefaultValue = true;
+                } else {
+                    $source = DefaultValueException::argument($p);
+                    $hasDefaultValue = false;
+                }
             }
 
             if ($p->isPassedByReference()) {
                 if ($callArguments) {
-                    #$args[$name] = $inputValue;
                     $inputValueOr = '';
                 }
-                if ($noDefaultValue) {
-                    $args[$name] = '\\' . self::class . '::byReferenceWithoutDefaultValue($args, ' . var_export($name, true) . ', ' . var_export($source, true) . ')';
-                } else {
+                if ($hasDefaultValue) {
                     $args[$name] = '\\' . self::class . '::byReferenceWithDefaultValue($args, ' . var_export($name, true) . ', ' . $defaultValue . ')';
+                } else {
+                    $args[$name] = '\\' . self::class . '::byReferenceWithoutDefaultValue($args, ' . var_export($name, true) . ', ' . var_export($source, true) . ')';
                 }
-            } elseif (!$noDefaultValue) {
+            } elseif ($hasDefaultValue) {
                 $args[$name] = $defaultValue;
             } elseif ($callArguments) {
                 $args[$name] = '\\' . DefaultValueException::class . '::throw("", ' . var_export($source, true) . ')';
@@ -177,23 +253,33 @@ class Autowire
         return $param;
     }
 
+    private function markNewing(string $className)
+    {
+        if (isset($this->newing[$className])) {
+            throw new CircularDependencyException(array_keys($this->newing + [$className => true]));
+        }
+        $this->newing[$className] = true;
+    }
+
+    private function unmarkNewing(string $className)
+    {
+        unset($this->newing[$className]);
+    }
+
     public function new(string $className, array $namedargs = [])
     {
         if (!class_exists($className)) {
             throw new NotFoundException($className);
         }
 
-        if (isset($this->newing[$className])) {
-            throw new CircularDependencyException(array_keys($this->newing + [$className => true]));
-        }
         try {
-            $this->newing[$className] = true;
+            $this->markNewing($className);
             $c = new ReflectionClass($className);
             $r = $c->getConstructor();
             $args = $r ? $this->createArguments($r, $namedargs, $className) : [];
             return $c->newInstanceArgs($args);
         } finally {
-            unset($this->newing[$className]);
+            $this->unmarkNewing($className);
         }
     }
 
