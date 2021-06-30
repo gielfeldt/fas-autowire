@@ -138,27 +138,6 @@ class Autowire
         return $args;
     }
 
-    private function getTypeName(ReflectionParameter $p)
-    {
-        if (!$p->hasType()) {
-            return null;
-        }
-        $type = $p->getType();
-        if ($type instanceof ReflectionUnionType) {
-            foreach ($type->getTypes() as $type) {
-                var_dump($type);
-                if ($type instanceof ReflectionNamedType) {
-                    var_dump("name: " . $type->getName());
-                }
-
-            }
-        }
-        if ($type instanceof ReflectionNamedType) {
-            return $type->getName();
-        }
-        return null;
-    }
-
     public function compileArguments(ReflectionFunctionAbstract $r, array $defaultArguments = [], bool $callArguments = true)
     {
         $args = [];
@@ -300,7 +279,7 @@ class Autowire
     {
         if (is_array($callback) && is_string($callback[0])) {
             [$class, $method] = $callback;
-            if (!class_exists($class)) {
+            if (!class_exists($class) && !interface_exists($class)) {
                 $instance = $this->container->get($class);
                 $class = get_class($instance);
             }
@@ -345,7 +324,7 @@ class Autowire
 
         if (is_array($callback) && is_string($callback[0])) {
             [$class, $method] = $callback;
-            if (!class_exists($class)) {
+            if (!class_exists($class) && !interface_exists($class)) {
                 $instance = $this->container->get($class);
                 $class = get_class($instance);
             }
