@@ -53,7 +53,8 @@ $upperCased  = $autowire->call('strtoupper', ['str' => 'something-in-lower-case'
 // Static method
 $datetime = $autowire->call([DateTime::class, 'createFromFormat'], [
     'format' => 'Y-m-d H:i:s',
-    'time' => '2021-01-02 12:34:56',
+    'time' => '2021-01-02 12:34:56', // php7
+    'datetime' => '2021-01-02 12:34:56', // php8
     'object' => new DateTimeZone('Europe/Copenhagen'),
 ]);
 
