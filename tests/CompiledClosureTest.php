@@ -42,8 +42,28 @@ class CompiledClosureTest extends TestCase
 
         $exporter = new Exporter();
         $code = $exporter->export($compiledClosure);
+
         $closure = null;
         eval("\$closure = $code;");
         $this->assertEquals('test', $closure($autowire->getContainer()));
     }
+
+    public function testCompiledClosureCanSetFunctionName()
+    {
+        $autowire = new Autowire();
+        $closure = static function () {
+            return 'test';
+        };
+        $compiledClosure = $autowire->compileCall($closure);
+
+        $exporter = new Exporter();
+        $compiledClosure->setFunctionName('myfunc');
+        $compiledClosure->setStatic(false);
+        $code = $exporter->export($compiledClosure);
+
+        $closure = null;
+        eval("$code");
+        $this->assertEquals('test', myfunc($autowire->getContainer()));
+    }
+
 }
