@@ -271,7 +271,7 @@ class Autowire
         $c = new ReflectionClass($className);
         $r = $c->getConstructor();
         $args = $r ? $this->compileArguments($r, $defaultArguments, $callArguments) : [];
-        $code = "return new \\" . $c->getName() . '(' . implode(', ', $args) . ');';
+        $code = "static function (\\" . ContainerInterface::class . " \$container, array \$args = []) { return new \\" . $c->getName() . '(' . implode(', ', $args) . '); }';
         return new CompiledClosure($code);
     }
 
@@ -358,9 +358,10 @@ class Autowire
             throw new InvalidArgumentException("Cannot compile callback");
         }
 
-        $code = 'return ' . $code . ';';
         if (!empty($staticVariables)) {
-            $code = $staticVariables . "\n" . $code;
+            $code = 'static function (\\' . ContainerInterface::class . ' $container, array $args = []) { ' . $staticVariables . "\n" . 'return ' . $code . '; }';
+        } else {
+            $code = 'static function (\\' . ContainerInterface::class . ' $container, array $args = []) { return ' . $code . '; }';
         }
         return new CompiledClosure($code);
     }

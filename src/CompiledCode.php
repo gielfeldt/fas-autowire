@@ -18,7 +18,7 @@ class CompiledCode implements ExportableInterface
 
     public function exportable(Exporter $exporter, $level = 0): string
     {
-        return (string) $this;
+        return $this->code;
     }
 
     public function __toString()
