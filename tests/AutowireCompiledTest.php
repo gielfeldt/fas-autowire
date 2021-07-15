@@ -2,6 +2,7 @@
 
 namespace Fas\Autowire\Tests;
 
+use Fas\Autowire\Container;
 use Fas\Autowire\Exception\DefaultValueException;
 use Fas\Autowire\Exception\InvalidDefinitionException;
 use InvalidArgumentException;
@@ -77,10 +78,8 @@ class AutowireCompiledTest extends AutowireTest
         $code = $this->compile(function (TestInterface $test) {
             return $test->implementation('works');
         });
-        /**
-         * @var Container $container
-         */
         $container = $this->autowire->getContainer();
+        assert($container instanceof Container);
         $container->set(TestInterface::class, TestImplementation::class);
 
         $result = $code($this->autowire->getContainer());

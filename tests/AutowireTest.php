@@ -4,6 +4,7 @@ namespace Fas\Autowire\Tests;
 
 use DateTime;
 use DateTimeZone;
+use Exception;
 use Fas\Autowire\Autowire;
 use Fas\Autowire\Container;
 use Fas\Autowire\Exception\CircularDependencyException;
@@ -345,10 +346,8 @@ class AutowireTest extends TestCase
 
     public function testWillUseContainerValueForOptionalParameter()
     {
-        /**
-         * @var Container $container
-         */
         $container = $this->autowire->getContainer();
+        assert($container instanceof Container);
         $container->set(TestInterface::class, TestImplementation::class);
         $result = $this->call(
             function (?TestInterface $test1 = null, TestInterface $test2) {
@@ -364,10 +363,8 @@ class AutowireTest extends TestCase
 
     public function testWillUseOverrideValueForOptionalParameterWithContainer()
     {
-        /**
-         * @var Container $container
-         */
         $container = $this->autowire->getContainer();
+        assert($container instanceof Container);
         $container->set(TestInterface::class, TestImplementation2::class);
         $result = $this->call(
             function (?TestInterface $test1 = null, TestInterface $test2) {
@@ -380,5 +377,29 @@ class AutowireTest extends TestCase
         );
 
         $this->assertEquals('WORKS', $result);
+    }
+
+    public function testCannotAutowireWithMissingInterface()
+    {
+        $result = $this->autowire->canAutowire(TestImplementation3::class);
+        $this->assertFalse($result);
+    }
+
+    public function testCanAutowireWithInterface()
+    {
+        $container = $this->autowire->getContainer();
+        assert($container instanceof Container);
+        $container->set(TestInterface::class, TestImplementation2::class);
+        $result = $this->autowire->canAutowire(TestImplementation3::class);
+        $this->assertTrue($result);
+    }
+
+    public function testCanAutowireWillFailOnOtherErrors()
+    {
+        $container = $this->autowire->getContainer();
+        assert($container instanceof Container);
+        $container->set(TestInterface::class, [TestImplementation2::class, 'notToBeCalled']);
+        $this->expectException(Exception::class);
+        $this->autowire->canAutowire(TestImplementation3::class);
     }
 }

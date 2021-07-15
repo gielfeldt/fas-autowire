@@ -60,9 +60,7 @@ class Autowire
                 $this->createArguments($r, $args, $className);
             }
             return true;
-        } catch (CircularDependencyException $e) {
-            throw $e;
-        } catch (Throwable $e) {
+        } catch (DefaultValueException $e) {
             return false;
         } finally {
             $this->unmarkNewing($className);
@@ -173,7 +171,7 @@ class Autowire
                             $defaultValue = '($container->has(' . var_export($type, true) . ') ? ' . $defaultValue . ' : ' . var_export($p->getDefaultValue(), true) . ')';
                         }
                         $hasDefaultValue = true;
-                    break;
+                        break;
                     }
                 }
             }

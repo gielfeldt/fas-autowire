@@ -20,4 +20,8 @@ class TestImplementation2 implements TestInterface
     {
         return 'xxx:' . $this->test->implementation($name) . ':xxx';
     }
+
+    private function notToBeCalled(): void
+    {
+    }
 }

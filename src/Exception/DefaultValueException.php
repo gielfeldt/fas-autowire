@@ -41,7 +41,7 @@ class DefaultValueException extends Exception implements ContainerExceptionInter
             return $type->getName();
         }, $types);
         return implode('|', $types);
-}
+    }
 
     public static function throw($id, $argument)
     {
