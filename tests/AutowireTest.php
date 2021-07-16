@@ -140,7 +140,7 @@ class AutowireTest extends TestCase
                 return $test->implementation(join(',', $args));
             },
             [
-            'args' => ['c', 'b', 'a']
+                'args' => ['c', 'b', 'a']
             ]
         );
 
@@ -157,7 +157,7 @@ class AutowireTest extends TestCase
                 return $r;
             },
             [
-            'args' => &$args,
+                'args' => &$args,
             ]
         );
 
@@ -175,7 +175,7 @@ class AutowireTest extends TestCase
                 return $r;
             },
             [
-            'args' => &$args,
+                'args' => &$args,
             ]
         );
 
@@ -218,7 +218,7 @@ class AutowireTest extends TestCase
                 return $r;
             },
             [
-            'args' => &$args
+                'args' => &$args
             ]
         );
 
@@ -234,7 +234,7 @@ class AutowireTest extends TestCase
                 return strtoupper($outside . $inside);
             },
             [
-            'inside' => 'dynamic'
+                'inside' => 'dynamic'
             ]
         );
 
@@ -247,7 +247,7 @@ class AutowireTest extends TestCase
         $this->call(
             NonInvokableClass::class,
             [
-            'args' => ['c', 'b', 'a']
+                'args' => ['c', 'b', 'a']
             ]
         );
     }
@@ -286,8 +286,8 @@ class AutowireTest extends TestCase
         $datetime = $this->new(
             DateTime::class,
             [
-            'time' => '2006-01-02T15:04:05+07:00', // php < 8
-            'datetime' => '2006-01-02T15:04:05+07:00' // php >= 8
+                'time' => '2006-01-02T15:04:05+07:00', // php < 8
+                'datetime' => '2006-01-02T15:04:05+07:00' // php >= 8
             ]
         );
         $this->assertEquals('2006-01-02T15:04:05+07:00', $datetime->format('c'));
@@ -322,7 +322,7 @@ class AutowireTest extends TestCase
                 return $test1 ? $test1->implementation('works') : $test2->implementation('works');
             },
             [
-            'test2' => new TestImplementation2(new TestImplementation()),
+                'test2' => new TestImplementation2(new TestImplementation()),
             ]
         );
 
@@ -336,8 +336,8 @@ class AutowireTest extends TestCase
                 return $test1 ? $test1->implementation('works') : $test2->implementation('works');
             },
             [
-            'test1' => new TestImplementation(),
-            'test2' => new TestImplementation2(new TestImplementation()),
+                'test1' => new TestImplementation(),
+                'test2' => new TestImplementation2(new TestImplementation()),
             ]
         );
 
@@ -354,7 +354,7 @@ class AutowireTest extends TestCase
                 return $test1 ? $test1->implementation('works') : $test2->implementation('works');
             },
             [
-            'test2' => new TestImplementation2(new TestImplementation()),
+                'test2' => new TestImplementation2(new TestImplementation()),
             ]
         );
 
@@ -371,8 +371,8 @@ class AutowireTest extends TestCase
                 return $test1 ? $test1->implementation('works') : $test2->implementation('works');
             },
             [
-            'test1' => new TestImplementation(),
-            'test2' => new TestImplementation2(new TestImplementation()),
+                'test1' => new TestImplementation(),
+                'test2' => new TestImplementation2(new TestImplementation()),
             ]
         );
 
