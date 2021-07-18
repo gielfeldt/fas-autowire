@@ -16,9 +16,7 @@ use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionNamedType;
-use ReflectionParameter;
 use ReflectionUnionType;
-use Throwable;
 
 class Autowire
 {
@@ -57,7 +55,7 @@ class Autowire
             $this->markNewing($className);
             $c = new ReflectionClass($className);
             if ($r = $c->getConstructor()) {
-                $this->createArguments($r, $args, $className);
+                $this->createArguments($r, $args, $className, true);
             }
             return true;
         } catch (DefaultValueException $e) {
@@ -67,7 +65,7 @@ class Autowire
         }
     }
 
-    public function createArguments(ReflectionFunctionAbstract $r, array $namedargs = [], $id = null)
+    public function createArguments(ReflectionFunctionAbstract $r, array $namedargs = [], $id = null, bool $checkOnly = false)
     {
         $args = [];
         $ps = $r->getParameters();
@@ -114,8 +112,7 @@ class Autowire
                         throw $errors;
                     }
 
-                    $this->trackReference($type);
-                    $args[] = $this->container->get($type);
+                    $args[] = $checkOnly ? null : $this->container->get($type);
                     continue 2;
                 }
             }

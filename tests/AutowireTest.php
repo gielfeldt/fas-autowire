@@ -384,12 +384,12 @@ class AutowireTest extends TestCase
         $this->assertTrue($result);
     }
 
-    public function testCanAutowireWillFailOnOtherErrors()
+    public function testCanAutowireWillNotFailOnDeepErrors()
     {
         $container = $this->autowire->getContainer();
         assert($container instanceof Container);
         $container->set(TestInterface::class, [TestImplementation2::class, 'notToBeCalled']);
-        $this->expectException(Exception::class);
-        $this->autowire->canAutowire(TestImplementation3::class);
+        $result = $this->autowire->canAutowire(TestImplementation3::class);
+        $this->assertTrue($result);
     }
 }
