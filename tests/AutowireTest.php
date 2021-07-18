@@ -259,16 +259,6 @@ class AutowireTest extends TestCase
         $this->call('somecallablethatdoesnotexist');
     }
 
-    public function testReferenceTracker()
-    {
-        $referenceTracker = new TestReferenceTracker();
-        $this->autowire->setReferenceTracker($referenceTracker);
-
-        $this->new(TestImplementation2::class);
-
-        $this->assertArrayHasKey(TestImplementation::class, $referenceTracker->references);
-    }
-
     public function testCanResolveNonClassNameEntry()
     {
         $result = $this->call(['test', 'implementation'], ['name' => 'qwe']);

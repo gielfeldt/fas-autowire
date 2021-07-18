@@ -85,4 +85,14 @@ class AutowireCompiledTest extends AutowireTest
         $result = $code($this->autowire->getContainer());
         $this->assertEquals('WORKS', $result);
     }
+
+    public function testReferenceTracker()
+    {
+        $referenceTracker = new TestReferenceTracker();
+        $this->autowire->setReferenceTracker($referenceTracker);
+
+        $this->new(TestImplementation2::class);
+
+        $this->assertArrayHasKey(TestImplementation::class, $referenceTracker->references);
+    }
 }
